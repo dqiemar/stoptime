@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1117">
+<meta name="color-scheme" content="dark">
+<meta name="referrer" content="no-referrer">
+<title>Останови время</title>
+<style>
+:root{color-scheme:dark;--bg:#0f1117;--panel:#1a1d27;--panel2:#232736;--line:#2a2d38;--blue:#8ab4f8;--bluebox:#1b2e4b;--muted:#9aa0a6;--green:#34a853;--red:#ea4335;--gold:#fdd663;--xl:28px;--lg:20px;--md:14px;--ease:cubic-bezier(.2,0,0,1)}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body,button,input,select,textarea{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",system-ui,sans-serif;font-weight:500;letter-spacing:-.005em}
+html,body{min-height:100%;background:var(--bg)}
+body{color:#e8eaed;display:flex;justify-content:center;padding:16px;min-height:100vh;overflow-x:hidden;touch-action:pan-y}
+button,input{font:inherit}
+button{border:0;user-select:none;-webkit-user-select:none;touch-action:manipulation;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
+.app{width:100%;max-width:640px;display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom)}
+h1{font-size:1.6rem;text-align:center;margin:0 0 16px;color:var(--blue);font-weight:500;letter-spacing:-.035em}
+.timer{font-size:clamp(2.35rem,9vw,3.4rem);font-variant-numeric:tabular-nums;text-align:center;padding:28px 16px;background:var(--panel);border-radius:var(--xl);margin-bottom:16px;letter-spacing:1px;font-weight:500;line-height:1.1;min-height:120px;display:flex;flex-direction:column;justify-content:center;align-items:center;overflow-wrap:anywhere;border:1px solid var(--line);box-shadow:0 8px 24px #0004}
+.timer .label{font-size:.85rem;color:var(--muted);font-weight:500;margin-top:8px;letter-spacing:0}
+.timer .label strong{color:var(--gold)}
+.big-btn{width:100%;min-height:clamp(140px,32vw,220px);border-radius:var(--xl);font-size:clamp(2.2rem,8vw,3.2rem);font-weight:500;letter-spacing:2px;display:flex;align-items:center;justify-content:center;transition:transform .12s var(--ease),filter .12s var(--ease),background .2s var(--ease);box-shadow:0 12px 28px #0005;touch-action:none}
+.big-btn:active{transform:scale(.975);filter:brightness(.92)}
+.big-btn.start{background:var(--green);color:white}
+.big-btn.stop{background:var(--red);color:white}
+.btn{width:100%;padding:15px 16px;font-size:1rem;font-weight:500;border-radius:var(--md);transition:filter .15s var(--ease),transform .12s var(--ease);min-height:50px}
+.btn:active{filter:brightness(.85);transform:scale(.985)}
+.btn.primary{background:var(--green);color:white}
+.btn.secondary{background:var(--panel2);color:#e8eaed}
+.btn.danger{background:#48232a;color:#ffb5bd}
+.card{background:var(--panel);border-radius:var(--xl);padding:20px;margin-bottom:14px;border:1px solid var(--line);min-width:0}
+.card h2{font-size:1.05rem;color:var(--muted);margin-bottom:14px;font-weight:500}
+.row{display:flex;align-items:center;gap:12px;padding:12px 10px;border-bottom:1px solid var(--line);border-radius:var(--md);min-width:0}
+.row:last-child{border-bottom:0}
+.row.me{background:var(--bluebox)}
+.place{width:32px;text-align:center;color:var(--blue);font-weight:500;flex-shrink:0}
+.name{flex:1;min-width:0;font-size:.95rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.time{font-variant-numeric:tabular-nums;font-weight:500;font-size:.9rem;color:var(--gold);flex-shrink:0;white-space:nowrap}
+.empty{color:#9aa0a6;font-size:.92rem;text-align:center;padding:20px 12px;line-height:1.5}
+.muted{color:var(--muted);font-size:.85rem;text-align:center;margin-top:10px;line-height:1.5}
+.err{color:#ff8a80;font-size:.85rem;margin-top:8px;min-height:1em;line-height:1.4}
+.tabs{display:flex;gap:6px;margin-bottom:14px;background:var(--panel);padding:6px;border-radius:var(--xl);border:1px solid var(--line)}
+.tabs button{flex:1;min-width:0;min-height:44px;padding:9px 4px;border-radius:var(--lg);background:transparent;color:var(--muted);font-weight:500;font-size:.9rem}
+.tabs button.on{background:var(--bluebox);color:var(--blue)}
+.settings-stack{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.stat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.stat{background:var(--panel2);border-radius:var(--lg);padding:14px;min-width:0}
+.stat small{display:block;color:var(--muted);font-size:.78rem;margin-bottom:6px}
+.stat strong{display:block;font-size:1.15rem;font-variant-numeric:tabular-nums;overflow-wrap:anywhere;font-weight:500}
+.section-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.section-head h2{margin-bottom:0}
+.small-btn{background:var(--panel2);color:var(--blue);padding:8px 12px;border-radius:12px;font-size:.82rem;font-weight:500}
+.name-input{width:100%;padding:13px 14px;background:var(--panel2);border:1px solid var(--line);border-radius:var(--md);color:#e8eaed;font-size:1rem;min-height:50px}
+.name-input::placeholder{color:var(--muted)}
+@media(max-width:380px){body{padding:10px}.card{padding:16px}.tabs button{font-size:.82rem}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<main class="app" id="app">
+<h1>Останови время</h1>
+<div id="content"></div>
+</main>
+<script>
+(() => {
+'use strict';
+
+const STORE = {
+  user: 'st_user',
+  results: 'st_results',
+  legacy: 'st_tops',
+  hotkey: 'st_hotkey',
+  names: 'st_names'
+};
+
+const read = (key, fallback) => {
+  try {
+    const value = localStorage.getItem(key);
+    return value === null ? fallback : JSON.parse(value);
+  } catch {
+    return fallback;
+  }
+};
+
+const write = (key, value) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const remove = key => {
+  try {
+    localStorage.removeItem(key);
+  } catch {}
+};
+
+const validUser = value =>
+  value && typeof value === 'object' &&
+  typeof value.id === 'string' &&
+  value.id.length > 0;
+
+const validResult = value =>
+  value && typeof value === 'object' &&
+  typeof value.id === 'string' &&
+  Number.isFinite(value.time) &&
+  value.time >= 0 &&
+  Number.isFinite(value.ts);
+
+const createUser = () => ({
+  id: globalThis.crypto?.randomUUID?.() || `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`
+});
+
+let user = read(STORE.user, null);
+if (!validUser(user)) user = null;
+
+let names = read(STORE.names, null);
+if (!names || typeof names !== 'object' || Array.isArray(names)) names = {};
+
+let results = read(STORE.results, null);
+if (!Array.isArray(results)) {
+  const oldResults = read(STORE.legacy, []);
+  results = Array.isArray(oldResults)
+    ? oldResults.filter(item => item && typeof item.id === 'string' && Number.isFinite(item.time) && item.time >= 0)
+      .map(item => ({id: item.id, time: item.time, ts: Number.isFinite(item.ts) ? item.ts : Date.now()}))
+    : [];
+  write(STORE.results, results);
+}
+results = results.filter(validResult);
+
+let hotkey = read(STORE.hotkey, '');
+if (typeof hotkey !== 'string') hotkey = '';
+let capturingHotkey = false;
+
+let tab = 'game';
+let state = 'idle';
+let startTime = 0;
+let elapsed = 0;
+let rafId = 0;
+let saveError = '';
+
+const $ = (selector, root = document) => root.querySelector(selector);
+const now = () => performance.now();
+
+// ---- Форматирование времени ----
+// Ступени: с → мс → мкс → нс → пс → фс → ас → зс → йс → планковские времена
+const PLANCK_S = 5.391247e-44; // секунд в планковском времени
+
+const trimNum = (value, maxDecimals) => {
+  const rounded = Number(value.toFixed(maxDecimals));
+  return rounded.toString();
+};
+
+const formatTime = ms => {
+  if (!Number.isFinite(ms) || ms < 0) ms = 0;
+  if (ms === 0) return '0 с';
+
+  const seconds = ms / 1000;
+
+  // секунды и крупнее
+  if (seconds >= 1) return `${seconds.toFixed(4).replace(/\.?0+$/, '')} с`;
+  // миллисекунды
+  if (ms >= 1) return `${ms.toFixed(3).replace(/\.?0+$/, '')} мс`;
+
+  // микросекунды
+  const us = ms * 1e3;
+  if (us >= 1) return `${trimNum(us, 2)} мкс`;
+
+  // наносекунды
+  const ns = ms * 1e6;
+  if (ns >= 1) return `${trimNum(ns, 2)} нс`;
+
+  // пикосекунды
+  const ps = ms * 1e9;
+  if (ps >= 1) return `${trimNum(ps, 2)} пс`;
+
+  // фемтосекунды
+  const fs = ms * 1e12;
+  if (fs >= 1) return `${trimNum(fs, 2)} фс`;
+
+  // аттосекунды
+  const as = ms * 1e15;
+  if (as >= 1) return `${trimNum(as, 2)} ас`;
+
+  // зептосекунды
+  const zs = ms * 1e18;
+  if (zs >= 1) return `${trimNum(zs, 2)} зс`;
+
+  // йоктосекунды
+  const ys = ms * 1e21;
+  if (ys >= 1) return `${trimNum(ys, 2)} йс`;
+
+  // планковские времена времени
+  const planckCount = seconds / PLANCK_S;
+  if (planckCount >= 1) return `${trimNum(planckCount, 2)} tP`;
+
+  // меньше планковского времени — показываем в долях tP с большей точностью
+  return `${trimNum(planckCount, 4)} tP`;
+};
+
+const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, char => ({
+  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+})[char]);
+
+const hotkeyLabel = code => {
+  if (!code) return '';
+  const map = {
+    Space: 'Пробел', Enter: 'Enter', Escape: 'Escape', Tab: 'Tab',
+    Backspace: 'Backspace', ShiftLeft: 'Shift', ShiftRight: 'Shift',
+    ControlLeft: 'Ctrl', ControlRight: 'Ctrl', AltLeft: 'Alt', AltRight: 'Alt',
+    ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→'
+  };
+  if (map[code]) return map[code];
+  if (code.startsWith('Key')) return code.slice(3);
+  if (code.startsWith('Digit')) return code.slice(5);
+  if (code.startsWith('Numpad')) return 'Num ' + code.slice(6);
+  return code;
+};
+
+const persist = () => {
+  const userSaved = write(STORE.user, user);
+  const resultsSaved = write(STORE.results, results);
+  const namesSaved = write(STORE.names, names);
+  saveError = userSaved && resultsSaved && namesSaved
+    ? ''
+    : 'Не удалось сохранить все данные. Возможно, память браузера заполнена.';
+  return !saveError;
+};
+
+const ensureUser = () => {
+  if (!user) {
+    user = createUser();
+    write(STORE.user, user);
+  }
+};
+
+const displayName = id => {
+  const raw = names[id];
+  if (typeof raw === 'string' && raw.trim()) return raw.trim();
+  return id === user.id ? 'Ты' : `Игрок ${id.slice(0, 6)}`;
+};
+
+const ownResults = () => results
+  .filter(result => result.id === user.id)
+  .sort((a, b) => b.ts - a.ts);
+
+// Лучший (минимальный) результат каждого игрока + сортировка по возрастанию
+const buildRating = () => {
+  const bestByPlayer = new Map();
+  for (const r of results) {
+    const current = bestByPlayer.get(r.id);
+    if (current === undefined || r.time < current) {
+      bestByPlayer.set(r.id, r.time);
+    }
+  }
+  const list = Array.from(bestByPlayer, ([id, time]) => ({id, time}));
+  list.sort((a, b) => a.time - b.time);
+  return list;
+};
+
+function render() {
+  ensureUser();
+
+  const content = $('#content');
+  content.replaceChildren();
+
+  const tabs = document.createElement('nav');
+  tabs.className = 'tabs';
+  tabs.setAttribute('aria-label', 'Разделы');
+  const tabItems = [
+    ['game', 'Игра'],
+    ['rating', 'Рейтинг'],
+    ['history', 'История'],
+    ['settings', 'Настройки']
+  ];
+  for (const [key, label] of tabItems) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = label;
+    button.className = tab === key ? 'on' : '';
+    button.setAttribute('aria-current', tab === key ? 'page' : 'false');
+    button.addEventListener('click', () => {
+      if (tab === key) return;
+      if (state === 'running') stopGame();
+      tab = key;
+      render();
+    });
+    tabs.appendChild(button);
+  }
+  content.appendChild(tabs);
+
+  if (tab === 'game') renderGame(content);
+  else if (tab === 'rating') renderRating(content);
+  else if (tab === 'history') renderHistory(content);
+  else renderSettings(content);
+
+  if (saveError) {
+    const warning = document.createElement('p');
+    warning.className = 'err';
+    warning.setAttribute('role', 'alert');
+    warning.textContent = saveError;
+    content.appendChild(warning);
+  }
+}
+
+function renderGame(root) {
+  const mine = ownResults();
+  const best = mine.length ? Math.min(...mine.map(result => result.time)) : null;
+  const card = document.createElement('section');
+  card.innerHTML = `
+    <div class="timer" aria-live="off">
+      <span id="liveTime">${formatTime(elapsed)}</span>
+      ${best === null ? '' : `<div class="label">Твой рекорд: <strong>${formatTime(best)}</strong></div>`}
+    </div>
+    <button type="button" class="big-btn ${state === 'running' ? 'stop' : 'start'}" id="actionButton">${state === 'running' ? 'СТОП' : 'СТАРТ'}</button>
+    <div class="stat-grid" style="margin-top:18px">
+      <div class="stat"><small>Попыток</small><strong>${mine.length}</strong></div>
+      <div class="stat"><small>Лучший результат</small><strong>${best === null ? '—' : formatTime(best)}</strong></div>
+    </div>`;
+  root.appendChild(card);
+
+  const button = $('#actionButton', card);
+  const timeDisplay = $('#liveTime', card);
+
+  const updateButton = () => {
+    button.textContent = state === 'running' ? 'СТОП' : 'СТАРТ';
+    button.classList.toggle('stop', state === 'running');
+    button.classList.toggle('start', state !== 'running');
+    button.setAttribute('aria-label', state === 'running' ? 'Остановить таймер' : 'Запустить таймер');
+  };
+
+  const activate = event => {
+    if (event.cancelable) event.preventDefault();
+    if (state === 'running') stopGame();
+    else startGame(timeDisplay, updateButton);
+  };
+
+  button.addEventListener('pointerdown', activate);
+  button.addEventListener('click', event => {
+    if (event.detail === 0 && !hotkey) activate(event);
+  });
+  updateButton();
+}
+
+function startGame(display, updateButton) {
+  if (state === 'running') return;
+  startTime = now();
+  elapsed = 0;
+  state = 'running';
+  updateButton();
+
+  const tick = () => {
+    if (state !== 'running') return;
+    elapsed = now() - startTime;
+    if (display.isConnected) display.textContent = formatTime(elapsed);
+    rafId = requestAnimationFrame(tick);
+  };
+  rafId = requestAnimationFrame(tick);
+}
+
+function stopGame() {
+  if (state !== 'running') return;
+  elapsed = Math.max(0, now() - startTime);
+  state = 'stopped';
+  cancelAnimationFrame(rafId);
+
+  results.push({
+    id: user.id,
+    time: elapsed,
+    ts: Date.now()
+  });
+  results.sort((a, b) => a.ts - b.ts);
+  if (results.length > 500) results = results.slice(-500);
+  persist();
+  render();
+}
+
+// Рейтинг всех игроков
+function renderRating(root) {
+  const card = document.createElement('section');
+  card.className = 'card';
+  const rating = buildRating();
+  card.innerHTML = `
+    <h2>Рекорды всех игроков</h2>
+    <div id="ratingList"></div>`;
+  root.appendChild(card);
+
+  const list = $('#ratingList', card);
+  if (!rating.length) {
+    list.innerHTML = '<div class="empty">Пока нет ни одного результата. Сыграй первым!</div>';
+    return;
+  }
+
+  list.innerHTML = rating.map((entry, index) => {
+    const isMe = entry.id === user.id;
+    const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
+    return `
+      <div class="row ${isMe ? 'me' : ''}">
+        <div class="place">${medal || (index + 1)}</div>
+        <div class="name">${escapeHTML(displayName(entry.id))}</div>
+        <div class="time">${formatTime(entry.time)}</div>
+      </div>`;
+  }).join('');
+}
+
+function renderHistory(root) {
+  const card = document.createElement('section');
+  card.className = 'card';
+  const history = ownResults();
+  card.innerHTML = `
+    <div class="section-head">
+      <h2>Твои попытки</h2>
+      <button type="button" class="small-btn" id="clearHistory">Очистить</button>
+    </div>
+    <div id="historyList"></div>`;
+  root.appendChild(card);
+
+  const list = $('#historyList', card);
+  if (!history.length) {
+    list.innerHTML = '<div class="empty">Здесь появятся все твои сохранённые результаты.</div>';
+  } else {
+    list.innerHTML = history.map((entry, index) => `
+      <div class="row">
+        <div class="place">${index + 1}</div>
+        <div class="name">${new Date(entry.ts).toLocaleString('ru-RU')}</div>
+        <div class="time">${formatTime(entry.time)}</div>
+      </div>`).join('');
+  }
+
+  $('#clearHistory', card).addEventListener('click', () => {
+    if (!confirm('Удалить всю историю твоих попыток?')) return;
+    results = results.filter(entry => entry.id !== user.id);
+    persist();
+    render();
+  });
+}
+
+function renderSettings(root) {
+  // Имя
+  const nameCard = document.createElement('section');
+  nameCard.className = 'card';
+  const currentName = displayName(user.id);
+  nameCard.innerHTML = `
+    <h2>Твоё имя</h2>
+    <p class="muted" style="text-align:left;margin-top:0">Это имя будет видно в рейтинге всем.</p>
+    <div class="settings-stack">
+      <input type="text" class="name-input" id="nameInput" maxlength="24"
+             placeholder="Введи имя" value="${escapeHTML(currentName === 'Ты' ? (names[user.id] || '') : currentName)}">
+      <button type="button" class="btn primary" id="saveName">Сохранить имя</button>
+    </div>`;
+  root.appendChild(nameCard);
+
+  $('#saveName', nameCard).addEventListener('click', () => {
+    const input = $('#nameInput', nameCard);
+    const value = String(input.value || '').trim().slice(0, 24);
+    if (value) {
+      names[user.id] = value;
+    } else {
+      delete names[user.id];
+    }
+    persist();
+    render();
+  });
+
+  // Горячая клавиша
+  const hotkeyCard = document.createElement('section');
+  hotkeyCard.className = 'card';
+  const hotkeyText = hotkey ? hotkeyLabel(hotkey) : 'Не назначена';
+  hotkeyCard.innerHTML = `
+    <h2>Горячая клавиша (ПК)</h2>
+    <p class="muted" style="text-align:left;margin-top:0">Назначь клавишу — она будет переключать старт/стоп во вкладке «Игра».</p>
+    <div class="settings-stack">
+      <button type="button" class="btn secondary" id="hotkeyBtn">${hotkey ? `Клавиша: ${escapeHTML(hotkeyText)}` : 'Назначить клавишу'}</button>
+      ${hotkey ? '<button type="button" class="btn secondary" id="hotkeyReset">Сбросить клавишу</button>' : ''}
+    </div>`;
+  root.appendChild(hotkeyCard);
+
+  $('#hotkeyBtn', hotkeyCard).addEventListener('click', event => {
+    const btn = event.currentTarget;
+    capturingHotkey = true;
+    btn.textContent = 'Нажми любую клавишу… (Esc — отмена)';
+    const handler = ev => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      document.removeEventListener('keydown', handler, true);
+      capturingHotkey = false;
+      if (ev.code === 'Escape') {
+        render();
+        return;
+      }
+      hotkey = ev.code;
+      write(STORE.hotkey, hotkey);
+      render();
+    };
+    document.addEventListener('keydown', handler, true);
+  });
+
+  const hotkeyReset = $('#hotkeyReset', hotkeyCard);
+  if (hotkeyReset) {
+    hotkeyReset.addEventListener('click', () => {
+      hotkey = '';
+      write(STORE.hotkey, hotkey);
+      render();
+    });
+  }
+
+  // Сброс прогресса
+  const resetCard = document.createElement('section');
+  resetCard.className = 'card';
+  resetCard.innerHTML = `<button type="button" class="btn danger" id="resetAll">Сбросить весь прогресс</button>`;
+  root.appendChild(resetCard);
+
+  $('#resetAll', resetCard).addEventListener('click', () => {
+    if (!confirm('Точно удалить профиль и все сохранённые результаты?')) return;
+    cancelAnimationFrame(rafId);
+    remove(STORE.user);
+    remove(STORE.results);
+    remove(STORE.legacy);
+    remove(STORE.names);
+    user = null;
+    results = [];
+    names = {};
+    state = 'idle';
+    elapsed = 0;
+    tab = 'game';
+    saveError = '';
+    render();
+  });
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && state === 'running') {
+    elapsed = Math.max(0, now() - startTime);
+  }
+});
+
+document.addEventListener('keydown', event => {
+  if (capturingHotkey) return;
+  if (!hotkey || !user || tab !== 'game') return;
+  if (event.code !== hotkey) return;
+  if (event.repeat) return;
+  if (event.target && event.target.closest && event.target.closest('input, textarea, [contenteditable="true"]')) return;
+  const button = $('#actionButton');
+  const display = $('#liveTime');
+  if (!button || !display) return;
+  event.preventDefault();
+  event.stopPropagation();
+  if (state === 'running') {
+    stopGame();
+  } else {
+    const updateButton = () => {
+      button.textContent = state === 'running' ? 'СТОП' : 'СТАРТ';
+      button.classList.toggle('stop', state === 'running');
+      button.classList.toggle('start', state !== 'running');
+    };
+    startGame(display, updateButton);
+  }
+});
+
+window.addEventListener('storage', event => {
+  if (event.key === STORE.user || event.key === STORE.results || event.key === STORE.hotkey || event.key === STORE.names) {
+    user = read(STORE.user, null);
+    if (!validUser(user)) user = null;
+    results = read(STORE.results, []);
+    if (!Array.isArray(results)) results = [];
+    results = results.filter(validResult);
+    names = read(STORE.names, null);
+    if (!names || typeof names !== 'object' || Array.isArray(names)) names = {};
+    hotkey = read(STORE.hotkey, '');
+    if (typeof hotkey !== 'string') hotkey = '';
+    if (state !== 'running') render();
+  }
+});
+
+render();
+})();
+</script>
+</body>
+</html>
